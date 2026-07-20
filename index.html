@@ -481,6 +481,7 @@ createApp({
                 
                 triggerAutoReply();
             }
+            setupActiveMsg();
         };
 
         const triggerAutoReply = () => {
@@ -488,7 +489,9 @@ createApp({
             isTyping.value = true;
             scrollToBottom();
             
-            const delay = (Math.random() * (settings.delayMax - settings.delayMin) + settings.delayMin) * 1000;
+            const minDelay = Number(settings.delayMin) || 1;
+    const maxDelay = Number(settings.delayMax) || 3;
+    const delay = (Math.random() * (maxDelay - minDelay) + minDelay) * 1000;
             
             setTimeout(() => {
                 isTyping.value = false;
