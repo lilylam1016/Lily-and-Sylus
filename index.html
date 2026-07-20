@@ -483,17 +483,17 @@ createApp({
             }
             setupActiveMsg();
         };
-
+let replyTimer = null;
         const triggerAutoReply = () => {
             if (isTyping.value) return;
             isTyping.value = true;
             scrollToBottom();
-            
+            clearTimeout(replyTimer);
             const minDelay = Number(settings.delayMin) || 1;
     const maxDelay = Number(settings.delayMax) || 3;
     const delay = (Math.random() * (maxDelay - minDelay) + minDelay) * 1000;
             
-            setTimeout(() => {
+            replyTimer =setTimeout(() => {
                 isTyping.value = false;
                 let text = "......";
                 const all = replyGroups.value.flatMap(g => g.replies);
