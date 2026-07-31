@@ -370,6 +370,7 @@ createApp({
             if (settings.isDark) document.documentElement.classList.add('dark');
             setupActiveMsg();
 
+            // 修正：重置卡住的輸入狀態，重新加載訊息
             document.addEventListener('visibilitychange', async () => {
                 if (document.visibilityState === 'visible') {
                     isTyping.value = false;
@@ -436,10 +437,8 @@ createApp({
         };
 
         let replyTimer = null;
-        let safetyTimer = null;
         const triggerAutoReply = () => {
             if (replyTimer) clearTimeout(replyTimer);
-            if (safetyTimer) clearTimeout(safetyTimer);
             isTyping.value = true;
             scrollToBottom();
             
@@ -455,17 +454,11 @@ createApp({
                 }
                 sendMsg('them', 'text', text);
                 
+                // 修正：取消 nextTick，同步關閉 isTyping
                 isTyping.value = false;
                 scrollToBottom();
-                if (safetyTimer) { clearTimeout(safetyTimer); safetyTimer = null; }
                 replyTimer = null;
             }, delay);
-
-            // 安全兜底：最多等 delay+5s，过后强制关掉输入中
-            safetyTimer = setTimeout(() => {
-                if (isTyping.value) isTyping.value = false;
-                safetyTimer = null;
-            }, delay + 5000);
         };
 
         const triggerReply = () => {
