@@ -275,32 +275,27 @@
                         </div>
                     </div>
 
-                    let replyTimer = null;
-        const triggerAutoReply = () => {
-            if (replyTimer) clearTimeout(replyTimer);
-            isTyping.value = true;
-            scrollToBottom();
-            
-            const minDelay = Number(settings.delayMin) || 1;
-            const maxDelay = Number(settings.delayMax) || 3;
-            const delay = (Math.random() * (maxDelay - minDelay) + minDelay) * 1000;
-            
-            replyTimer = setTimeout(() => {
-                let text = "......";
-                const all = replyGroups.value.flatMap(g => g.replies);
-                if(all.length > 0) {
-                    text = all[Math.floor(Math.random() * all.length)].text;
-                }
-                sendMsg('them', 'text', text);
-                
-                nextTick(() => {
-                    isTyping.value = false;
-                    scrollToBottom();
-                });
-                
-                replyTimer = null;
-            }, delay);
-        };
+                    <div class="space-y-4">
+                        <span class="text-[10px] text-muted/50 tracking-widest uppercase block mb-2">外观定制</span>
+                        <div>
+                            <div class="flex justify-between text-xs mb-2">
+                                <span class="tracking-widest">头像圆角</span>
+                                <span class="text-muted">{{settings.avatarRadius}}%</span>
+                            </div>
+                            <input type="range" v-model="settings.avatarRadius" min="0" max="50" class="w-full accent-text h-1 bg-border appearance-none">
+                        </div>
+                        <div class="pt-2 flex flex-col gap-2">
+                            <span class="tracking-widest text-xs">背景图片</span>
+                            <input type="file" accept="image/*" @change="uploadBg" class="text-[10px] text-muted file:bg-bg file:border-none file:px-3 file:py-1 file:mr-2 cursor-pointer">
+                            <button v-if="settings.bgImage" @click="settings.bgImage=''" class="text-[10px] text-red-900/50 self-start">清除背景</button>
+                        </div>
+                        <div class="pt-2">
+                            <span class="tracking-widest text-xs block mb-2">自定义气泡 CSS</span>
+                            <textarea v-model="settings.customCSS" rows="2" class="w-full bg-bg border border-border px-3 py-2 text-[10px] font-mono resize-none" placeholder=".bubble-custom-class { }"></textarea>
+                            <button @click="applyCSS" class="text-[10px] tracking-widest text-text border border-border px-3 py-1 mt-2 hover:bg-border">应用</button>
+                        </div>
+                    </div>
+
                     <div class="pt-6 pb-2 flex justify-between border-t border-border/50">
                         <button @click="exportChat" class="text-[11px] tracking-widest text-text border border-border px-4 py-1.5 hover:bg-border">导出记录</button>
                         <button @click="clearChat" class="text-[11px] tracking-widest text-red-700/80 border border-red-900/10 px-4 py-1.5 hover:bg-red-900/5">清空所有</button>
@@ -401,334 +396,303 @@ createApp({
         const modals = reactive({ settings: false, replyManager: false });
 
         const generateEmojis = () => {
-            const emojis = "😀 😁 😂 🤣 😃 😄 😅 😆 😉 😊 😋 😎 😍 😘 😗 😙 😚 ☺️ 😶 😐 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕 🤑 🤠 😈 👿 👹 👺 🤡 💩 👻 💀 👽 👾 🤖 🎃 😺 😸 😹 😻 😼 😽 🙀 😿 😾 🙈 🙉 🙊 💋 💌 💘 💝 💖 💗 💓 💞 💕 💟 ❣️ 💔 ❤️ 🧡 💛 💚 💙 💜 🤎 🖤 🤍 💯 💢 💥 💫 💦 💨 🕳️ 💣 💬 👁️‍🗨️ 🗨️ 🗯️ 思想 💤 👋 🤚 🖐️ ✋ 🖖 👌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 🖕 👇 ☝️ 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 👐 🤲 🤝 🙏 ✍️ 💅 🤳 💪 🦾 🦿 🦵 🦶 👂 🦻 👃 🧠 🦷 骨 眼睛 👁️ 👅 👄".split(" ").filter(e=>e.trim());
-            return emojis.map(e => ({ text: e }));
+            const emojis = "😀 😁 😂 🤣 😃 😄 😅 😆 😉 😊 😋 😎 😍 😘 😗 😙 😚 ☺️ 😶 😐 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕 🤑 🤠 😈 👿 👹 👺 🤡 💩 👻 💀 👽 👾 🤖 🎃 😺 😸 😹 😻 😼 😽 🙀 😿 😾 🙈 🙉 🙊 💋 💌 💘 💝 💖 💗 💓 💞 💕 💟 ❣️ 💔 ❤️ 🧡 💛 💚 💙 💜 🤎 🖤 🤍 💯 💢 💥 💫 💦 💨 🕳️ 💣 💬 👁️‍🗨️ 🗨️ 🗯️ 思想 💤 👋 🤚 🖐️ ✋ 🖖 👌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 🖕 👇 ☝️ 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 👐 🤲 🤝 🙏 ✍️ 💅 🤳 💪 🦾 🦵 🦿 🦶 👂 🦻 👃 🧠 🦷 🦴 👀 👁️ 👅 👄";
+            return emojis.split(' ').map((e, idx) => ({ id: idx, text: e }));
         };
+
         const replyGroups = ref([
-            { id: 'g_custom', name: '我的回复', replies: [] },
-            { id: 'g_emoji', name: '表情库', replies: generateEmojis() }
+            { id: 1, name: '常用标点/问候', replies: [{ text: '嗯。' }, { text: '在的。' }, { text: '好。' }] },
+            { id: 2, name: 'Emoji 符号', replies: generateEmojis() }
         ]);
-        const currentGroupId = ref('g_custom');
+        
+        const currentGroupId = ref(1);
         const searchQuery = ref('');
         const newReplyText = ref('');
 
-        let audioCtx;
-        const playSound = (type) => {
-            if (!settings.sound) return;
-            try {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if(audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.type = 'sine';
-                
-                if (type === 'send') {
-                    osc.frequency.setValueAtTime(500, audioCtx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
-                } else {
-                    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.1);
-                }
-                
-                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-            } catch (e) {}
+        const filteredReplies = computed(() => {
+            const group = replyGroups.value.find(g => g.id === currentGroupId.value);
+            if (!group) return [];
+            if (!searchQuery.value) return group.replies;
+            return group.replies.filter(r => r.text.includes(searchQuery.value));
+        });
+
+        const initLucide = () => { nextTick(() => { if (window.lucide) lucide.createIcons(); }); };
+
+        onMounted(async () => {
+            await loadData();
+            setTimeout(() => { showSplash.value = false; initLucide(); }, 1200);
+            applyCSS();
+            if (settings.isDark) document.documentElement.classList.add('dark');
+            setupActiveMsg();
+        });
+
+        watch(modals, () => initLucide(), { deep: true });
+        watch(settings, () => {
+            saveData();
+            if (settings.isDark) document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+        }, { deep: true });
+
+        const saveData = async () => {
+            await localforage.setItem('messages', JSON.parse(JSON.stringify(messages.value)));
+            await localforage.setItem('profiles', JSON.parse(JSON.stringify(profiles)));
+            await localforage.setItem('settings', JSON.parse(JSON.stringify(settings)));
+            await localforage.setItem('replyGroups', JSON.parse(JSON.stringify(replyGroups.value)));
         };
 
-        let saveTimeout;
-        const saveData = () => {
-            if(showSplash.value) return; 
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(async () => {
-                const data = {
-                    messages: JSON.parse(JSON.stringify(messages.value)),
-                    profiles: JSON.parse(JSON.stringify(profiles)),
-                    settings: JSON.parse(JSON.stringify(settings)),
-                    replyGroups: JSON.parse(JSON.stringify(replyGroups.value))
-                };
-                await localforage.setItem('jingyu_data', data);
-            }, 500); 
+        const loadData = async () => {
+            const m = await localforage.getItem('messages'); if(m) messages.value = m;
+            const p = await localforage.getItem('profiles'); if(p) Object.assign(profiles, p);
+            const s = await localforage.getItem('settings'); if(s) Object.assign(settings, s);
+            const r = await localforage.getItem('replyGroups'); if(r) replyGroups.value = r;
         };
 
-        watch([messages, profiles, settings, replyGroups], saveData, { deep: true });
-
-        const scrollToBottom = async () => {
-            await nextTick();
-            const container = document.getElementById('chat-container');
-            if (container) container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-        };
-
-        const sendMsg = async (sender, type, content = null) => {
-            let txt = content;
-            if(type === 'text' && sender === 'me') {
-                if(!inputText.value.trim()) return;
-                txt = inputText.value.trim();
-                inputText.value = '';
-                const ta = document.querySelector('textarea');
-                if(ta) ta.style.height = 'auto';
-            }
-            if(!txt) return;
-
-            const msgId = Date.now().toString();
-            messages.value.push({
-                id: msgId, sender, type, content: txt, timestamp: Date.now(), status: 'sent'
+        const scrollToBottom = () => {
+            nextTick(() => {
+                const el = document.getElementById('chat-container');
+                if (el) el.scrollTop = el.scrollHeight;
             });
-            playSound(sender);
+        };
+
+        const sendMsg = (sender, type = 'text', content = '') => {
+            const text = content || inputText.value;
+            if (!text.trim() && type === 'text') return;
+
+            messages.value.push({
+                id: Date.now(),
+                sender, type,
+                content: text,
+                timestamp: Date.now(),
+                status: sender === 'me' ? 'sent' : 'read'
+            });
+
+            if (sender === 'me') inputText.value = '';
+            
+            if (sender === 'them') {
+                messages.value.forEach(m => { if (m.sender === 'me') m.status = 'read'; });
+            }
+
+            saveData();
             scrollToBottom();
+            initLucide();
+            playAudio();
 
             if (sender === 'me') {
-                setTimeout(() => {
-                    const m = messages.value.find(x => x.id === msgId);
-                    if(m) m.status = 'read';
-                }, Math.random() * 1500 + 1000);
-                
                 triggerAutoReply();
-                setupActiveMsg();
             }
-            
         };
-let replyTimer = null;
+
+        let replyTimer = null;
         const triggerAutoReply = () => {
-            if (isTyping.value) return;
-            clearTimeout(replyTimer);
+            if (replyTimer) clearTimeout(replyTimer);
             isTyping.value = true;
             scrollToBottom();
-            const minDelay = Number(settings.delayMin) || 1;
-    const maxDelay = Number(settings.delayMax) || 3;
-    const delay = (Math.random() * (maxDelay - minDelay) + minDelay) * 1000;
             
-            replyTimer =setTimeout(() => {
-                isTyping.value = false;
+            const minDelay = Number(settings.delayMin) || 1;
+            const maxDelay = Number(settings.delayMax) || 3;
+            const delay = (Math.random() * (maxDelay - minDelay) + minDelay) * 1000;
+            
+            replyTimer = setTimeout(() => {
                 let text = "......";
                 const all = replyGroups.value.flatMap(g => g.replies);
                 if(all.length > 0) {
                     text = all[Math.floor(Math.random() * all.length)].text;
                 }
                 sendMsg('them', 'text', text);
+                
+                nextTick(() => {
+                    isTyping.value = false;
+                    scrollToBottom();
+                });
+                
+                replyTimer = null;
             }, delay);
         };
 
         const triggerReply = () => {
-            if(inputText.value.trim()) {
-                sendMsg('me', 'text');
-            } else {
-                triggerAutoReply();
-            }
+            triggerAutoReply();
         };
 
         const handleImageUpload = (e) => {
             const file = e.target.files[0];
-            if(!file) return;
+            if (!file) return;
             const reader = new FileReader();
-            reader.onload = ev => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height;
-                    const MAX = 800;
-                    if(w>MAX) { h*=MAX/w; w=MAX; }
-                    canvas.width=w; canvas.height=h;
-                    canvas.getContext('2d').drawImage(img,0,0,w,h);
-                    sendMsg('me', 'image', canvas.toDataURL('image/jpeg', 0.8));
-                };
-                img.src = ev.target.result;
-            };
+            reader.onload = (evt) => sendMsg('me', 'image', evt.target.result);
             reader.readAsDataURL(file);
-            e.target.value = '';
         };
 
-        const deleteMsg = id => messages.value = messages.value.filter(m => m.id !== id);
-
-        const setupActiveMsg = () => {
-            clearInterval(activeTimer.value);
-            if(settings.activeMsg) {
-                activeTimer.value = setInterval(() => {
-                    triggerAutoReply();
-                }, (settings.activeInterval || 30) * 1000);
-            }
-        };
-        watch(() => settings.activeMsg, setupActiveMsg);
-        watch(() => settings.activeInterval, setupActiveMsg);
-
-        const shouldShowDate = i => {
-            if(i===0) return true;
-            const c = new Date(messages.value[i].timestamp);
-            const p = new Date(messages.value[i-1].timestamp);
-            return c.toDateString() !== p.toDateString();
-        };
-        const formatDateSeparator = ts => {
-            const d = new Date(ts), today = new Date();
-            const yest = new Date(today); yest.setDate(yest.getDate()-1);
-            if(d.toDateString() === today.toDateString()) return '今 日';
-            if(d.toDateString() === yest.toDateString()) return '昨 日';
-            return `${(d.getMonth()+1).toString().padStart(2,'0')} / ${d.getDate().toString().padStart(2,'0')}`;
-        };
-        const formatTime = ts => {
-            const d = new Date(ts);
-            return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
-        };
-        const shouldShowAvatar = i => {
-            if(i===0) return true;
-            const c = messages.value[i], p = messages.value[i-1];
-            if(c.sender !== p.sender) return true;
-            if(c.timestamp - p.timestamp > 60000) return true;
-            return false;
+        const uploadBg = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => settings.bgImage = evt.target.result;
+            reader.readAsDataURL(file);
         };
 
-        const toggleTheme = () => {
-            settings.isDark = !settings.isDark;
-            if(settings.isDark) document.documentElement.classList.add('dark');
-            else document.documentElement.classList.remove('dark');
-        };
-        const applyCSS = () => {
-            const el = document.getElementById('custom-bubble-css');
-            if(el) el.innerHTML = settings.customCSS;
-        };
-
-        const editProfile = role => {
-            const n = prompt(`修改${role==='me'?'我的':'对方'}昵称：`, profiles[role].name);
-            if(n && n.trim()) profiles[role].name = n.trim().substring(0,12);
-            
-            if(confirm('是否上传新头像图片？\n(取消保留原样，确认后不选文件则重置为文字)')) {
-                const input = document.createElement('input');
-                input.type = 'file'; input.accept = 'image/*';
-                input.onchange = e => {
-                    const f = e.target.files[0];
-                    if(f) {
-                        const r = new FileReader();
-                        r.onload = ev => {
-                            const img = new Image();
-                            img.onload = () => {
-                                const c = document.createElement('canvas');
-                                let w=img.width, h=img.height, MAX=200;
-                                if(w>MAX){h*=MAX/w; w=MAX;}
-                                c.width=w; c.height=h;
-                                c.getContext('2d').drawImage(img,0,0,w,h);
-                                profiles[role].avatar = c.toDataURL('image/jpeg', 0.8);
-                            };
-                            img.src = ev.target.result;
-                        };
-                        r.readAsDataURL(f);
-                    } else { profiles[role].avatar = ''; }
-                };
-                input.click();
-            }
-        };
-
-        const uploadBg = e => {
-            const f = e.target.files[0];
-            if(!f) return;
-            const r = new FileReader();
-            r.onload = ev => settings.bgImage = ev.target.result;
-            r.readAsDataURL(f);
+        const deleteMsg = (id) => {
+            messages.value = messages.value.filter(m => m.id !== id);
+            saveData();
         };
 
         const clearChat = () => {
-            if(confirm('将彻底清空聊天记录，确认吗？')) {
-                messages.value = []; modals.settings = false;
+            if(confirm('清空所有记录？')) {
+                messages.value = [];
+                saveData();
             }
         };
-        const exportChat = () => {
-            let str = "--- 聊天记录导出 ---\n\n";
-            messages.value.forEach(m => {
-                str += `[${new Date(m.timestamp).toLocaleString()}] ${profiles[m.sender].name}: ${m.type==='text'?m.content:'[图片]'}\n`;
-            });
-            const b = new Blob([str], {type:"text/plain;charset=utf-8"});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b);
-            a.download = `Chat_${Date.now()}.txt`; a.click();
+
+        const editProfile = (who) => {
+            const name = prompt('更改名称', profiles[who].name);
+            if (name) profiles[who].name = name;
+            const avatar = prompt('更改头像 (输入图片 URL 或取消)', profiles[who].avatar);
+            if (avatar !== null) profiles[who].avatar = avatar;
+            saveData();
         };
 
-        const currentGroup = computed(() => replyGroups.value.find(g => g.id === currentGroupId.value) || replyGroups.value[0]);
-        const filteredReplies = computed(() => {
-            if(!searchQuery.value) return currentGroup.value.replies;
-            return currentGroup.value.replies.filter(r => r.text.includes(searchQuery.value));
-        });
+        const toggleTheme = () => settings.isDark = !settings.isDark;
+
+        const applyCSS = () => {
+            const el = document.getElementById('custom-bubble-css');
+            if (el) el.innerHTML = settings.customCSS;
+        };
+
+        const playAudio = () => {
+            if (!settings.sound) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+                gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.1);
+            } catch(e) {}
+        };
+
+        const setupActiveMsg = () => {
+            if (activeTimer.value) clearInterval(activeTimer.value);
+            if (settings.activeMsg) {
+                activeTimer.value = setInterval(() => {
+                    if (!isTyping.value && Math.random() > 0.5) {
+                        triggerAutoReply();
+                    }
+                }, (settings.activeInterval || 30) * 1000);
+            }
+        };
+
+        watch(() => [settings.activeMsg, settings.activeInterval], setupActiveMsg);
+
+        const shouldShowDate = (index) => {
+            if (index === 0) return true;
+            const prev = messages.value[index - 1].timestamp;
+            const curr = messages.value[index].timestamp;
+            return (curr - prev) > 5 * 60 * 1000;
+        };
+
+        const shouldShowAvatar = (index) => {
+            if (index === 0) return true;
+            const prev = messages.value[index - 1];
+            const curr = messages.value[index];
+            if (prev.sender !== curr.sender) return true;
+            return (curr.timestamp - prev.timestamp) > 2 * 60 * 1000;
+        };
+
+        const formatTime = (ts) => {
+            const d = new Date(ts);
+            return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        };
+
+        const formatDateSeparator = (ts) => {
+            const d = new Date(ts);
+            return `${d.getMonth()+1}月${d.getDate()}日 ${formatTime(ts)}`;
+        };
 
         const addGroup = () => {
-            const n = prompt("输入新分组名称：");
-            if(n && n.trim()) {
-                const id = 'g_' + Date.now();
-                replyGroups.value.push({id, name: n.trim(), replies: []});
+            const name = prompt('分组名称');
+            if(name) {
+                const id = Date.now();
+                replyGroups.value.push({ id, name, replies: [] });
                 currentGroupId.value = id;
+                saveData();
             }
         };
-        const deleteGroup = id => {
-            if(confirm('删除此组及其所有内容？')) {
+
+        const deleteGroup = (id) => {
+            if(confirm('删除此分组？')) {
                 replyGroups.value = replyGroups.value.filter(g => g.id !== id);
-                if(currentGroupId.value === id) currentGroupId.value = replyGroups.value[0].id;
+                if(currentGroupId.value === id) currentGroupId.value = replyGroups.value[0]?.id || 1;
+                saveData();
             }
         };
+
         const addReply = () => {
-            if(newReplyText.value.trim()) {
-                currentGroup.value.replies.push({ text: newReplyText.value.trim() });
-                newReplyText.value = ''; scrollToBottom();
+            if(!newReplyText.value.trim()) return;
+            const group = replyGroups.value.find(g => g.id === currentGroupId.value);
+            if(group) {
+                group.replies.push({ text: newReplyText.value });
+                newReplyText.value = '';
+                saveData();
+                nextTick(() => {
+                    const el = this.$refs.replyList;
+                    if(el) el.scrollTop = el.scrollHeight;
+                });
             }
         };
-        const removeReply = reply => {
-            const idx = currentGroup.value.replies.indexOf(reply);
-            if(idx > -1) currentGroup.value.replies.splice(idx, 1);
+
+        const removeReply = (reply) => {
+            const group = replyGroups.value.find(g => g.id === currentGroupId.value);
+            if(group) {
+                group.replies = group.replies.filter(r => r !== reply);
+                saveData();
+            }
+        };
+
+        const exportChat = () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(messages.value, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", `chat_export_${Date.now()}.json`);
+            a.click();
         };
 
         const exportReplies = () => {
-            const b = new Blob([JSON.stringify(replyGroups.value)], {type:"application/json"});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b);
-            a.download = "Replies.json"; a.click();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(replyGroups.value, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", `replies_export_${Date.now()}.json`);
+            a.click();
         };
-        const importReplies = e => {
-            const f = e.target.files[0];
-            if(!f) return;
-            const r = new FileReader();
-            r.onload = ev => {
+
+        const importReplies = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
                 try {
-                    const parsed = JSON.parse(ev.target.result);
-                    if(Array.isArray(parsed)) {
-                        if(confirm('点击[确定]覆盖现有库，点击[取消]追加到现有库')) replyGroups.value = parsed;
-                        else replyGroups.value.push(...parsed);
-                        currentGroupId.value = replyGroups.value[0].id;
+                    const imported = JSON.parse(evt.target.result);
+                    if(Array.isArray(imported)) {
+                        replyGroups.value = imported;
+                        saveData();
+                        alert('导入成功！');
                     }
-                } catch(err) { alert('文件格式有误'); }
+                } catch(err) { alert('文件格式不正确'); }
             };
-            r.readAsText(f); e.target.value='';
+            reader.readAsText(file);
         };
-
-        onMounted(async () => {
-            try {
-                const data = await localforage.getItem('jingyu_data');
-                if(data) {
-                    if(data.messages) messages.value = data.messages;
-                    if(data.profiles) Object.assign(profiles, data.profiles);
-                    if(data.settings) Object.assign(settings, data.settings);
-                    if(data.replyGroups) replyGroups.value = data.replyGroups;
-                }
-            } catch(e) {}
-
-            if(settings.isDark) document.documentElement.classList.add('dark');
-            applyCSS(); setupActiveMsg();
-            
-            const ta = document.querySelector('textarea');
-            if(ta) ta.addEventListener('input', function(){ this.style.height='auto'; this.style.height=this.scrollHeight+'px'; });
-
-            setTimeout(() => {
-                showSplash.value = false;
-                nextTick(() => {
-                    scrollToBottom();
-                    if(window.formkit && chatList.value) formkit.autoAnimate(chatList.value, {duration: 300});
-                });
-            }, 2000);
-        });
-
-        watch([messages, modals], () => nextTick(() => lucide.createIcons()), { deep: true });
-        onMounted(() => setTimeout(() => lucide.createIcons(), 100));
 
         return {
             showSplash, chatList, messages, inputText, isTyping, previewImg,
-            profiles, settings, modals, replyGroups, currentGroupId, searchQuery, newReplyText, filteredReplies,
-            sendMsg, triggerReply, handleImageUpload, deleteMsg,
-            shouldShowDate, formatDateSeparator, formatTime, shouldShowAvatar,
-            toggleTheme, applyCSS, editProfile, uploadBg, clearChat, exportChat,
-            addGroup, deleteGroup, addReply, removeReply, exportReplies, importReplies, saveData
+            profiles, settings, modals, replyGroups, currentGroupId,
+            searchQuery, newReplyText, filteredReplies,
+            sendMsg, triggerReply, handleImageUpload, uploadBg, deleteMsg,
+            clearChat, editProfile, toggleTheme, applyCSS, shouldShowDate,
+            shouldShowAvatar, formatTime, formatDateSeparator, addGroup,
+            deleteGroup, addReply, removeReply, exportChat, exportReplies,
+            importReplies, saveData
         };
     }
 }).mount('#app');
