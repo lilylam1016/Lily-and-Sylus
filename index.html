@@ -275,27 +275,32 @@
                         </div>
                     </div>
 
-                    <div class="space-y-4">
-                        <span class="text-[10px] text-muted/50 tracking-widest uppercase block mb-2">外观定制</span>
-                        <div>
-                            <div class="flex justify-between text-xs mb-2">
-                                <span class="tracking-widest">头像圆角</span>
-                                <span class="text-muted">{{settings.avatarRadius}}%</span>
-                            </div>
-                            <input type="range" v-model="settings.avatarRadius" min="0" max="50" class="w-full accent-text h-1 bg-border appearance-none">
-                        </div>
-                        <div class="pt-2 flex flex-col gap-2">
-                            <span class="tracking-widest text-xs">背景图片</span>
-                            <input type="file" accept="image/*" @change="uploadBg" class="text-[10px] text-muted file:bg-bg file:border-none file:px-3 file:py-1 file:mr-2 cursor-pointer">
-                            <button v-if="settings.bgImage" @click="settings.bgImage=''" class="text-[10px] text-red-900/50 self-start">清除背景</button>
-                        </div>
-                        <div class="pt-2">
-                            <span class="tracking-widest text-xs block mb-2">自定义气泡 CSS</span>
-                            <textarea v-model="settings.customCSS" rows="2" class="w-full bg-bg border border-border px-3 py-2 text-[10px] font-mono resize-none" placeholder=".bubble-custom-class { }"></textarea>
-                            <button @click="applyCSS" class="text-[10px] tracking-widest text-text border border-border px-3 py-1 mt-2 hover:bg-border">应用</button>
-                        </div>
-                    </div>
-
+                    let replyTimer = null;
+        const triggerAutoReply = () => {
+            if (replyTimer) clearTimeout(replyTimer);
+            isTyping.value = true;
+            scrollToBottom();
+            
+            const minDelay = Number(settings.delayMin) || 1;
+            const maxDelay = Number(settings.delayMax) || 3;
+            const delay = (Math.random() * (maxDelay - minDelay) + minDelay) * 1000;
+            
+            replyTimer = setTimeout(() => {
+                let text = "......";
+                const all = replyGroups.value.flatMap(g => g.replies);
+                if(all.length > 0) {
+                    text = all[Math.floor(Math.random() * all.length)].text;
+                }
+                sendMsg('them', 'text', text);
+                
+                nextTick(() => {
+                    isTyping.value = false;
+                    scrollToBottom();
+                });
+                
+                replyTimer = null;
+            }, delay);
+        };
                     <div class="pt-6 pb-2 flex justify-between border-t border-border/50">
                         <button @click="exportChat" class="text-[11px] tracking-widest text-text border border-border px-4 py-1.5 hover:bg-border">导出记录</button>
                         <button @click="clearChat" class="text-[11px] tracking-widest text-red-700/80 border border-red-900/10 px-4 py-1.5 hover:bg-red-900/5">清空所有</button>
